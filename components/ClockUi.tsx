@@ -2,6 +2,16 @@ import { Dimensions, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { ThemedText } from "./ThemedText";
+import { FlashList } from "@shopify/flash-list";
+import { CityStoreType } from "@/store/interface";
+import useTimeZoneStore from "@/store/timeZoneStore";
+import { ThemedView } from "./ThemedView";
+import { ScrollView } from "react-native-gesture-handler";
+import ParallaxScrollView from "./ParallaxScrollView";
+import Animated from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme.web";
 
 const { width } = Dimensions.get("screen");
 const SIZE = width * 0.8;
@@ -10,6 +20,7 @@ const CLOCK_RADIUS = (SIZE * 0.8) / 2;
 const CENTER = CLOCK_RADIUS;
 
 const ClockUi = () => {
+  const colorScheme = useColorScheme();
   let [sec, setSec] = useState(date.getSeconds() * 6);
   let [min, setMin] = useState(
     date.getMinutes() * 6 + (date.getSeconds() * 6) / 60
@@ -18,6 +29,21 @@ const ClockUi = () => {
     date.getHours() * 30 + date.getMinutes() * 0.5 + date.getSeconds() / 120
   );
   let [data, setdata] = useState(date);
+
+  const { cities, removeCity } = useTimeZoneStore();
+  let f = (cityStore: CityStoreType) => {
+    try {
+      console.log(cityStore.name);
+      return data.toLocaleString("de-DE", {
+        // hour: "numeric",
+        hour12: false,
+        timeZone: cityStore.zone,
+        timeStyle: "short",
+      });
+    } catch (e) {
+      return "";
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -37,7 +63,7 @@ const ClockUi = () => {
       const x = CENTER + (CLOCK_RADIUS - 20) * Math.sin(angle);
       const y = CENTER - (CLOCK_RADIUS - 20) * Math.cos(angle);
       numbers.push(
-        <Text key={i} style={[styles.number, { top: y - 10, left: x - 10 }]}>
+        <Text key={i} style={[styles.number, { top: y - 10, left: x - 5 }]}>
           {"●"}
         </Text>
       );
@@ -73,13 +99,17 @@ const ClockUi = () => {
   };
 
   return (
-    <View style={{ justifyContent: "center", alignItems: "center", gap: 20 }}>
+    <View
+      style={{
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 20,
+        flex: 1,
+        // backgroundColor: "red",
+      }}
+    >
       <View style={styles.container}>
-        <View style={[styles.bigQuadrant]}>
-          {
-            // renderNumbers()
-          }
-        </View>
+        <View style={[styles.bigQuadrant]}>{renderNumbers()}</View>
         <View style={[styles.mediumQuadrant]} />
         <View style={[styles.mover, transformHours]}>
           <View style={[styles.hours]} />
@@ -92,7 +122,53 @@ const ClockUi = () => {
         </View>
         <View style={[styles.smallQuadrant]} />
       </View>
-      <Text style={styles.time}>{data.toLocaleTimeString()}</Text>
+      <ThemedText type="defaultSemiBold" style={styles.time}>
+        {data.toLocaleTimeString()}
+      </ThemedText>
+      <View style={{ flex: 1, width: SIZE * 1.1, gap: 5 }}>
+        <FlashList
+          data={cities}
+          extraData={{}}
+          renderItem={({ item }) => (
+            <View style={styles.citiesContainer}>
+              <ThemedText type="defaultSemiBold" style={styles.text}>
+                {item.name}
+              </ThemedText>
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 8,
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <ThemedText type="default" style={styles.text}>
+                  {
+                    // f(item)
+                    // data.toLocaleTimeString()
+                    data.toLocaleString("de-DE", {
+                      // hour: "numeric",
+                      hour12: false,
+                      timeZone: item.zone,
+                      timeStyle: "short",
+                    })
+                  }
+                </ThemedText>
+                <Ionicons
+                  name="remove-circle"
+                  size={20}
+                  style={{ color: Colors[colorScheme ?? "light"].tint }}
+                  onPress={() => {
+                    removeCity(item);
+                  }}
+                />
+              </View>
+            </View>
+          )}
+          estimatedItemSize={10}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
     </View>
   );
 };
@@ -170,7 +246,21 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 30,
-    marginBottom: 20,
-    fontFamily: "ManufakturMedium",
+  },
+  text: {
+    fontSize: 20,
+  },
+  citiesContainer: {
+    // flex: 1,
+    // height: 50,
+    width: SIZE * 1.1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
+
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+    marginVertical: 5,
   },
 });

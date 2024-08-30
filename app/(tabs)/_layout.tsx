@@ -15,7 +15,14 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: Colors[colorScheme ?? "light"].background,
+          height: 80,
+          paddingBottom: 20,
+          paddingTop: 20,
+          borderRadius: 10,
         },
+      }}
+      sceneContainerStyle={{
+        backgroundColor: Colors[colorScheme ?? "light"].background,
       }}
     >
       <Tabs.Screen

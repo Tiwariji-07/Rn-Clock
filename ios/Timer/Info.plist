@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>myapp</string>
+          <string>timer</string>
           <string>com.tiwari.timer</string>
         </array>
       </dict>

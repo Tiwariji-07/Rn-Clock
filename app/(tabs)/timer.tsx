@@ -4,7 +4,7 @@ import { HelloWave } from "@/components/HelloWave";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TimeInput from "@/components/TimeInput";
 import useTimerState from "@/store/timerValue";
@@ -16,17 +16,48 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import TimerCountdown from "@/components/TimerCountdown";
+import { Audio } from "expo-av";
 
 export default function TimerScreen() {
   const { hour, minute, second } = useTimerState();
   const [isRunning, setIsRunning] = useState(false);
   const [palyed, setPlayed] = useState(false);
+  const [timeUp, setTimeUp] = useState(false);
+
+  const [sound, setSound] = useState<Audio.Sound>();
+
+  async function playSound() {
+    console.log("Loading Sound");
+    const { sound } = await Audio.Sound.createAsync(
+      require("../../assets/images/ringtone.mp3")
+    );
+    setSound(sound);
+
+    console.log("Playing Sound");
+    await sound.playAsync();
+  }
+  async function pauseSound() {
+    console.log("Pausing Sound");
+    sound?.unloadAsync();
+
+    // await sound?.pauseAsync();
+  }
+
+  useEffect(() => {
+    if (timeUp) {
+      playSound();
+    }
+  }, [timeUp]);
   return (
     <SafeAreaView style={styles.Container}>
       {palyed ? <></> : <TimeInput />}
       {/* <ThemedText>{hour + minute + second}</ThemedText> */}
       {palyed ? (
-        <TimerCountdown isRunning={isRunning} setIsRunning={setIsRunning} />
+        <TimerCountdown
+          isRunning={isRunning}
+          setIsRunning={setIsRunning}
+          setTimeUp={setTimeUp}
+        />
       ) : (
         <></>
       )}
@@ -35,6 +66,8 @@ export default function TimerScreen() {
           {palyed ? (
             <ThemedButton
               onPress={() => {
+                pauseSound();
+                setTimeUp(false);
                 setIsRunning(false);
                 setPlayed(!palyed);
               }}
@@ -47,19 +80,33 @@ export default function TimerScreen() {
             <View style={{ width: 40 }}></View>
           )}
           {parseInt(hour + minute + second) > 0 ? (
-            <ThemedButton
-              style={styles.button}
-              onPress={() => {
-                setIsRunning(!isRunning);
-                setPlayed(true);
-              }}
-            >
-              <Ionicons
-                name={isRunning ? "pause" : "play"}
-                size={24}
-                color="white"
-              />
-            </ThemedButton>
+            !timeUp ? (
+              <ThemedButton
+                style={styles.button}
+                onPress={() => {
+                  setIsRunning(!isRunning);
+                  setPlayed(true);
+                }}
+              >
+                <Ionicons
+                  name={timeUp ? "stop" : isRunning ? "pause" : "play"}
+                  size={24}
+                  color="white"
+                />
+              </ThemedButton>
+            ) : (
+              <ThemedButton
+                style={styles.button}
+                onPress={() => {
+                  pauseSound();
+                  setTimeUp(false);
+                  setIsRunning(false);
+                  // setPlayed(true);
+                }}
+              >
+                <Ionicons name={"stop"} size={24} color="white" />
+              </ThemedButton>
+            )
           ) : (
             <></>
           )}

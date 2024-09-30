@@ -1,19 +1,20 @@
 import { Animated as A, Button, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import useTimerState from "@/store/timerValue";
-import {
-  AnimatedCircularProgress,
-  CircularProgress,
-} from "react-native-circular-progress";
-import Animated from "react-native-reanimated";
+
 import { Circle, G, Svg, Text as SvgText } from "react-native-svg";
 
 interface CountdownProps {
   isRunning: boolean;
   setIsRunning: (value: boolean) => void;
+  setTimeUp: (value: boolean) => void;
 }
 
-const TimerCountdown = ({ isRunning, setIsRunning }: CountdownProps) => {
+const TimerCountdown = ({
+  isRunning,
+  setIsRunning,
+  setTimeUp,
+}: CountdownProps) => {
   // Constants for circle dimensions
   const radius = 100;
   const strokeWidth = 10;
@@ -26,11 +27,8 @@ const TimerCountdown = ({ isRunning, setIsRunning }: CountdownProps) => {
   const [timeLeft, setTimeLeft] = useState<number>(
     parseInt(hour) * 3600 + parseInt(minute) * 60 + parseInt(second)
   ); // Total time in seconds
-  //   const [isRunning, setIsRunning] = useState(false); // Timer running state
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Animated value for circular progress
-  const animatedValue = useRef(new A.Value(0)).current;
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   let progress = timeLeft / initialTimeInSeconds;
   let strokeDashoffset = circumference * (1 - progress);
@@ -44,7 +42,7 @@ const TimerCountdown = ({ isRunning, setIsRunning }: CountdownProps) => {
             strokeDashoffset = circumference * (1 - progress);
             // clearInterval(intervalRef.current); // Clear the interval
             handleReset();
-            alert("Time's up!"); // Trigger alert
+            setTimeUp(true);
             return 0;
           }
           console.log("running");
@@ -55,16 +53,13 @@ const TimerCountdown = ({ isRunning, setIsRunning }: CountdownProps) => {
       }, 1000);
     }
 
-    return () => clearInterval(intervalRef.current); // Clean up on unmount
+    return () => {
+      clearInterval(intervalRef.current);
+    }; // Clean up on unmount
   }, [isRunning]);
 
   const handleStart = () => {
     setIsRunning(true);
-    A.timing(animatedValue, {
-      toValue: 1,
-      duration: timeLeft * 1000, // Set the animation duration based on remaining time
-      useNativeDriver: true,
-    }).start();
   };
 
   // Pause the countdown
